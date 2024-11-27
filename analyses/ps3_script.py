@@ -22,11 +22,9 @@ df = load_transform()
 weight = df["Exposure"].values
 df["PurePremium"] = df["ClaimAmountCut"] / df["Exposure"]
 y = df["PurePremium"]
-# TODO: Why do you think, we divide by exposure here to arrive at our outcome variable?
-
 
 # TODO: use your create_sample_split function here
-# df = create_sample_split(...)
+df = create_sample_split(df, 'IDpol', training_frac=0.8)
 train = np.where(df["sample"] == "train")
 test = np.where(df["sample"] == "test")
 df_train = df.iloc[train].copy()
@@ -89,12 +87,22 @@ numeric_cols = ["BonusMalus", "Density"]
 preprocessor = ColumnTransformer(
     transformers=[
         # TODO: Add numeric transforms here
+        ("num", 
+        Pipeline(steps=[
+            ('scaler',StandardScaler()),
+            ('spline',SplineTransformer(knots="quantile", include_bias=False))
+        ]),
+        numeric_cols
+        ),
         ("cat", OneHotEncoder(sparse_output=False, drop="first"), categoricals),
     ]
 )
 preprocessor.set_output(transform="pandas")
 model_pipeline = Pipeline(
     # TODO: Define pipeline steps here
+    steps=[('preprocessor',preprocessor),
+            ('regressor', TweedieDist)
+            ]
 )
 
 # let's have a look at the pipeline
